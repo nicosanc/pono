@@ -12,7 +12,22 @@ router = APIRouter()
 
 @router.get("/users/{user_id}/conversations")
 def get_user_conversations(user_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get all conversations for a user, ordered by most recent"""
+    """Get all conversations for a user, ordered by most recent.
+    
+    Retrieves conversation metadata (title, duration, message count)
+    for all conversations belonging to the authenticated user.
+    
+    Args:
+        user_id: Target user's ID
+        current_user: Authenticated user from JWT token
+        db: Database session
+        
+    Returns:
+        List of conversation objects with id, title, duration, created_at, message_count
+        
+    Raises:
+        HTTPException: 403 if user_id doesn't match current_user
+    """
 
     # Ensure user can only access their own conversations
     if current_user.id != user_id:
@@ -30,7 +45,7 @@ def get_user_conversations(user_id: int, current_user: models.User = Depends(get
 
 @router.get("/conversations/{conversation_id}/messages")
 def get_conversation_messages(conversation_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get all messages for a specific conversation"""
+
     
     conversation = db.query(models.Conversation).filter(models.Conversation.id == conversation_id).first()
     
@@ -72,7 +87,19 @@ def delete_conversation(conversation_id: int, current_user: models.User = Depend
 
 @router.get("/conversations/search")
 def search_conversations(query: str, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Semantic search across all conversations for a user"""
+    """Semantic search across all conversations for a user.
+    
+    Generates embedding for search query and performs cosine similarity
+    search against conversation embeddings to find most relevant sessions.
+    
+    Args:
+        query: Natural language search query
+        current_user: Authenticated user from JWT token
+        db: Database session
+        
+    Returns:
+        List of top 10 most relevant conversations with similarity scores
+    """
 
     query_embedding = generate_query_embedding(query)
     distance = models.Conversation.embedding.cosine_distance(query_embedding).label("distance")
@@ -93,7 +120,22 @@ def complete_onboarding(
     current_user: models.User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Mark onboarding conversation as complete and generate profile summary"""
+    """Mark onboarding conversation as complete and generate profile summary.
+    
+    Retrieves onboarding conversation transcript, generates user profile
+    summary via GPT-4o-mini, and updates user's onboarding_completed flag.
+    
+    Args:
+        conversation_id: ID of the onboarding conversation
+        current_user: Authenticated user from JWT token
+        db: Database session
+        
+    Returns:
+        Dict with success message and generated profile_summary
+        
+    Raises:
+        HTTPException: 404 if conversation not found or unauthorized
+    """
     
     conversation = db.query(models.Conversation).filter(
         models.Conversation.id == conversation_id,

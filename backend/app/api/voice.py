@@ -17,7 +17,19 @@ from app.services.encryption import encrypt_data, decrypt_data
 router = APIRouter()
 
 async def relay_client_to_openai(client_ws: WebSocket, openai_ws):
-    """Forward audio from browser to OpenAI Realtime API"""
+    """Forward audio from browser to OpenAI Realtime API.
+    
+    Continuously receives audio data from the client WebSocket and forwards
+    it to the OpenAI Realtime API WebSocket until disconnection or error.
+    
+    Args:
+        client_ws: WebSocket connection to the browser client
+        openai_ws: WebSocket connection to OpenAI Realtime API
+        
+    Raises:
+        WebSocketDisconnect: When client disconnects
+    """
+
     try:
         while True:
             data = await client_ws.receive_text()
@@ -27,7 +39,17 @@ async def relay_client_to_openai(client_ws: WebSocket, openai_ws):
         await openai_ws.close()  # Close OpenAI connection to break the other loop
 
 async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript):
-    """Forward OpenAI responses to browser and capture transcript"""
+    """Forward OpenAI responses to browser and capture transcript.
+    
+    Streams events from OpenAI Realtime API to the client browser while
+    extracting and storing user/assistant transcriptions for database persistence.
+    
+    Args:
+        openai_ws: WebSocket connection to OpenAI Realtime API
+        client_ws: WebSocket connection to the browser client
+        transcript: List to append transcript messages to (modified in-place)
+    """
+
     try:
         async for message in openai_ws:
             event = json.loads(message)
@@ -57,7 +79,24 @@ async def voice_endpoint(
     websocket: WebSocket,
     token: str,
     onboarding: bool = False):
-    """Handle voice communication with OpenAI Realtime API"""
+    """Handle real-time voice communication with OpenAI Realtime API.
+    
+    Establishes bidirectional WebSocket connection for voice chat, validates
+    JWT authentication, creates conversation record, injects user context
+    (profile summary or onboarding script), and saves encrypted transcript
+    with embeddings on completion.
+    
+    Args:
+        websocket: WebSocket connection from the client
+        token: JWT access token for authentication
+        onboarding: If True, uses onboarding prompt instead of regular coaching
+        
+    Returns:
+        None (WebSocket connection handled asynchronously)
+        
+    Raises:
+        WebSocketDisconnect: When connection is closed by client
+    """
     
     # Must accept WebSocket before we can close it
     await websocket.accept()

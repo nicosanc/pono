@@ -6,14 +6,17 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
 def generate_profile_summary(transcript: list[dict]) -> str:
-    """
-    Generate a coaching profile summary from onboarding conversation.
+    """Generate concise user profile summary from onboarding conversation.
+    
+    Analyzes onboarding transcript using GPT-4o-mini to extract user's
+    goals, challenges, and relevant background into a 2-3 paragraph
+    profile for context injection in future coaching sessions.
     
     Args:
-        transcript: List of {"role": "user/assistant", "content": "..."}
-    
+        transcript: List of message dicts from onboarding conversation
+        
     Returns:
-        2-3 paragraph summary of user's goals, challenges, background
+        Profile summary as formatted string (bulleted list, third person)
     """
     full_text = "\n".join([f"{msg['role']}: {msg['content']}" for msg in transcript])
     
@@ -22,7 +25,7 @@ def generate_profile_summary(transcript: list[dict]) -> str:
         messages=[
             {
                 "role": "system",
-                "content": "You are a coaching assistant. Analyze this onboarding conversation and create a bulletted list of 10 items or less summarizing: 1) User's main goals and intentions, 2) Current challenges and pain points, 3) Previous attemps at achieving the goals. Write in third person."
+                "content": "You are a coaching assistant. Analyze this onboarding conversation and create a bulleted list of 10 items or less summarizing: 1) User's main goals and intentions, 2) Current challenges and pain points, 3) Previous attemps at achieving the goals. Write in third person."
             },
             {
                 "role": "user",
