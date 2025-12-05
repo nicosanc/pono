@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from app.database import Base, engine
 from app import models
-from app.api import auth, voice, conversations
+from app.api import auth, voice, conversations, analytics
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -22,6 +22,7 @@ app.add_middleware(
 app.include_router(conversations.router)
 app.include_router(voice.router)
 app.include_router(auth.router)  
+app.include_router(analytics.router, prefix="/api", tags=["analytics"])
 
 @app.get("/")
 def root():

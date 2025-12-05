@@ -72,14 +72,15 @@ function Onboarding({ token, userId, onComplete }) {
       wsRef.current.onmessage = async (event) => {
         const msg = JSON.parse(event.data);
         
-        // Track when user stops speaking
+        // Track when user stops speaking (server VAD handles commit + response automatically)
         if (msg.type === 'input_audio_buffer.speech_stopped') {
           latencyRef.current.userStoppedTime = performance.now();
           latencyRef.current.audioStartTime = null;
+          return;
         }
         
         // Handle audio playback and measure latency
-        if (msg.type === 'response.audio.delta' && msg.delta) {
+        if (msg.type === 'response.output_audio.delta' && msg.delta) {
           // Measure latency on first audio chunk
           if (latencyRef.current.userStoppedTime && !latencyRef.current.audioStartTime) {
             latencyRef.current.audioStartTime = performance.now();
@@ -182,12 +183,7 @@ function Onboarding({ token, userId, onComplete }) {
           headers: { 'Authorization': `Bearer ${token}` }
         }
       );
-
-      if (!res.ok) throw new Error('Failed to complete onboarding');
-
       const data = await res.json();
-      
-      // Notify parent to refresh and show main UI
       onComplete();
     } catch (error) {
       console.error('Error completing onboarding:', error);
@@ -195,30 +191,43 @@ function Onboarding({ token, userId, onComplete }) {
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: '100vh',
-      background: 'linear-gradient(180deg, #E8F2ED 0%, #F4E8D8 50%, #FCEADE 100%)'
-    }}>
-      <h1 style={{ 
-        color: '#1B5F5A', 
-        fontWeight: '700', 
-        fontSize: '48px',
-        marginBottom: '20px'
-      }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        width: '100vw',
+        height: '100vh',
+        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
+        margin: 0,
+        padding: 0
+      }}
+    >
+      <h1
+        style={{
+          color: '#D4A017',
+          fontWeight: '700',
+          fontSize: '48px',
+          marginBottom: '20px',
+          textShadow: '0 2px 8px rgba(255, 193, 7, 0.2)'
+        }}
+      >
         Welcome to Pono
       </h1>
-      
-      <p style={{
-        color: '#5A8E8C',
-        fontSize: '18px',
-        marginBottom: '60px',
-        textAlign: 'center',
-        maxWidth: '600px'
-      }}>
+
+      <p
+        style={{
+          color: '#C9A961',
+          fontSize: '18px',
+          marginBottom: '60px',
+          textAlign: 'center',
+          maxWidth: '600px'
+        }}
+      >
         Let's get to know you. Tell me about yourself, your goals, and what you'd like to work on.
       </p>
 
@@ -228,8 +237,8 @@ function Onboarding({ token, userId, onComplete }) {
         <button
           onClick={startOnboarding}
           style={{
-            background: 'linear-gradient(135deg, #5A8E8C 0%, #7A9B7F 100%)',
-            color: '#E8F2ED',
+            background: 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)',
+            color: '#5D4E37',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -237,16 +246,16 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: 'pointer',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: '0 4px 12px rgba(90, 142, 140, 0.3)',
+            boxShadow: '0 4px 12px rgba(255, 213, 79, 0.4)',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(90, 142, 140, 0.4)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 213, 79, 0.6)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(90, 142, 140, 0.3)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 213, 79, 0.4)';
           }}
         >
           Start Consultation
@@ -257,8 +266,8 @@ function Onboarding({ token, userId, onComplete }) {
         <button
           onClick={stopOnboarding}
           style={{
-            background: 'linear-gradient(135deg, #C45C3A 0%, #A04830 100%)',
-            color: '#E8F2ED',
+            background: 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
+            color: '#5D4E37',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -266,7 +275,7 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: 'pointer',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: '0 4px 12px rgba(196, 92, 58, 0.3)',
+            boxShadow: '0 4px 12px rgba(255, 152, 0, 0.4)',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
@@ -275,7 +284,7 @@ function Onboarding({ token, userId, onComplete }) {
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(196, 92, 58, 0.3)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.4)';
           }}
         >
           Stop
@@ -287,10 +296,10 @@ function Onboarding({ token, userId, onComplete }) {
           onClick={completeOnboarding}
           disabled={!conversationId}
           style={{
-            background: conversationId 
-              ? 'linear-gradient(135deg, #E87C4D 0%, #D4725C 100%)'
-              : '#ccc',
-            color: '#E8F2ED',
+            background: conversationId
+              ? 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)'
+              : '#FFF9E6',
+            color: conversationId ? '#5D4E37' : '#C9A961',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -298,19 +307,19 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: conversationId ? 'pointer' : 'not-allowed',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: conversationId ? '0 4px 12px rgba(232, 124, 77, 0.3)' : 'none',
+            boxShadow: conversationId ? '0 4px 12px rgba(255, 213, 79, 0.4)' : 'none',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
             if (conversationId) {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(232, 124, 77, 0.4)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 213, 79, 0.6)';
             }
           }}
           onMouseLeave={(e) => {
             if (conversationId) {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(232, 124, 77, 0.3)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 213, 79, 0.4)';
             }
           }}
         >
@@ -322,4 +331,3 @@ function Onboarding({ token, userId, onComplete }) {
 }
 
 export default Onboarding;
-

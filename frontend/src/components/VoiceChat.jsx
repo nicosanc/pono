@@ -5,11 +5,13 @@ import VoiceWaveform from './VoiceWaveform';
 function VoiceChat({ token, userId }) {
   const queryClient = useQueryClient();
   const [isConnected, setIsConnected] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [transcript, setTranscript] = useState([]);
   const [analyserNode, setAnalyserNode] = useState(null);
   const wsRef = useRef(null);
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
+  const streamRef = useRef(null);
   
   // Latency tracking
   const latencyRef = useRef({
@@ -39,8 +41,18 @@ function VoiceChat({ token, userId }) {
       handleServerMessage(event.data);
     };
 
+    wsRef.current.onerror = (error) => {
+      console.error('WebSocket error:', error);
+      setIsConnected(false);
+    };
+
     wsRef.current.onclose = () => {
       setIsConnected(false);
+      // Clean up audio stream if WebSocket closes unexpectedly
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
       // Delay refetch to allow backend to save transcript
       setTimeout(() => {
         queryClient.invalidateQueries({ queryKey: ['conversations', userId] });
@@ -49,43 +61,69 @@ function VoiceChat({ token, userId }) {
   };
 
   const startAudioCapture = async () => {
-   
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  
-    audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+    let stream = null;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
     
-    // Load worklet
-    await audioContextRef.current.audioWorklet.addModule('/audio-processor.js');
-    
-    const source = audioContextRef.current.createMediaStreamSource(stream);
-    const workletNode = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
-    
-    // Create analyser for visualization
-    analyserRef.current = audioContextRef.current.createAnalyser();
-    source.connect(analyserRef.current); // Mic → analyser for waveform
-    source.connect(workletNode); // Mic → worklet for processing
-    setAnalyserNode(analyserRef.current);
-    
-    // Receive processed audio from worklet
-    workletNode.port.onmessage = (e) => {
+      audioContextRef.current = new AudioContext({ sampleRate: 24000 });
+      
+      // Load AudioWorklet
+      await audioContextRef.current.audioWorklet.addModule('/audio-processor.js');
+      
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+      
+      // Add gain node (boosts signal AND fixes AudioWorklet bug with MediaStreamSource)
+      const gainNode = audioContextRef.current.createGain();
+      gainNode.gain.value = 3.0;
+      source.connect(gainNode);
+      
+      // Create AudioWorklet
+      const workletNode = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
+      
+      // Receive processed audio from worklet
+      workletNode.port.onmessage = (e) => {
         const pcm16Buffer = e.data;
         const uint8Array = new Uint8Array(pcm16Buffer);
         const base64 = btoa(String.fromCharCode(...uint8Array));
         
-        wsRef.current.send(JSON.stringify({
-        type: 'input_audio_buffer.append',
-        audio: base64
-        }));
-    };
+        if (wsRef.current?.readyState === WebSocket.OPEN) {
+          wsRef.current.send(JSON.stringify({
+            type: 'input_audio_buffer.append',
+            audio: base64
+          }));
+        }
+      };
+      
+      // Create analyser for AI voice visualization only
+      analyserRef.current = audioContextRef.current.createAnalyser();
+      analyserRef.current.fftSize = 2048;
+      setAnalyserNode(analyserRef.current);
+      
+      // Connect microphone to worklet (not to analyser)
+      gainNode.connect(workletNode);
+    } catch (error) {
+      console.error('Error starting audio capture:', error);
+      // Clean up stream if it was created
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      // Close WebSocket if audio setup fails
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      setIsConnected(false);
+    }
   };
 
   const handleServerMessage = (data) => {
     const event = JSON.parse(data);
   
-  // Track when user stops speaking
+  // Track when user stops speaking (server VAD handles commit + response automatically)
   if (event.type === 'input_audio_buffer.speech_stopped') {
     latencyRef.current.userStoppedTime = performance.now();
     latencyRef.current.audioStartTime = null; // Reset for next response
+    return;
   }
   
   // Handle transcript events
@@ -104,7 +142,7 @@ function VoiceChat({ token, userId }) {
   }
   
   // Handle audio playback and measure latency
-  if (event.type === 'response.audio.delta') {
+  if (event.type === 'response.output_audio.delta') {
     const audioData = event.delta; // base64 PCM16
     
     // Measure latency on first audio chunk
@@ -143,9 +181,13 @@ const playAudio = (base64Audio) => {
   const source = audioContextRef.current.createBufferSource();
   source.buffer = audioBuffer;
   
-  // Connect directly to speakers for playback
-  // (analyserRef is only for microphone visualization, not playback)
-  source.connect(audioContextRef.current.destination);
+  // Connect to analyser for waveform visualization, then to speakers
+  if (analyserRef.current) {
+    source.connect(analyserRef.current);
+    analyserRef.current.connect(audioContextRef.current.destination);
+  } else {
+    source.connect(audioContextRef.current.destination);
+  }
   
   // Schedule precisely to avoid gaps
   const currentTime = audioContextRef.current.currentTime;
@@ -157,19 +199,45 @@ const playAudio = (base64Audio) => {
   scheduledTimeRef.current += audioBuffer.duration;
 };
 
-  const stopConversation = () => {
+  const stopConversation = async () => {
+    // Set saving state to block new conversations
+    setIsSaving(true);
+    
+    // Close WebSocket
     if (wsRef.current) {
       wsRef.current.close();
-      setIsConnected(false);
+      wsRef.current = null;
     }
+    
+    // Stop all audio tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    
+    // Close AudioContext and clear all audio nodes
     if (audioContextRef.current) {
       audioContextRef.current.close();
+      audioContextRef.current = null;
     }
-    setAnalyserNode(null); // Clear analyser state
-    // Delay refetch to allow backend to save transcript
-    setTimeout(() => {
-      queryClient.invalidateQueries({ queryKey: ['conversations', userId] });
-    }, 1500); // 1.5s delay for backend to save messages
+    
+    // Clear refs
+    analyserRef.current = null;
+    setAnalyserNode(null);
+    scheduledTimeRef.current = 0;
+    
+    // Reset state
+    setIsConnected(false);
+    setTranscript([]);
+    
+    // Wait for backend to finish processing (transcript, embeddings, Hume analysis)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Force refetch conversations
+    await queryClient.refetchQueries({ queryKey: ['conversations', userId] });
+    
+    // Clear saving state - user can now start new conversation
+    setIsSaving(false);
   };
 
   return (
@@ -179,25 +247,25 @@ const playAudio = (base64Audio) => {
       <div style={{ display: 'flex', gap: '15px', justifyContent: 'center' }}>
         <button 
           onClick={startConversation} 
-          disabled={isConnected}
+          disabled={isConnected || isSaving}
           style={{
-            background: isConnected 
-              ? 'linear-gradient(135deg, #7A9B7F 0%, #5A8E8C 100%)' 
-              : 'linear-gradient(135deg, #E87C4D 0%, #D4725C 100%)',
-            color: '#E8F2ED',
+            background: (isConnected || isSaving)
+              ? 'linear-gradient(135deg, #FFD54F 0%, #FFC107 100%)' 
+              : 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)',
+            color: '#5D4E37',
             border: 'none',
             padding: '16px 48px',
             fontSize: '18px',
             borderRadius: '30px',
-            cursor: isConnected ? 'not-allowed' : 'pointer',
+            cursor: (isConnected || isSaving) ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s',
             fontWeight: '600',
-            boxShadow: '0 4px 16px rgba(232, 124, 77, 0.4)'
+            boxShadow: '0 4px 16px rgba(255, 235, 59, 0.4)'
           }}
-          onMouseEnter={(e) => !isConnected && (e.currentTarget.style.boxShadow = '0 6px 20px rgba(212, 114, 92, 0.5)')}
-          onMouseLeave={(e) => !isConnected && (e.currentTarget.style.boxShadow = '0 4px 16px rgba(232, 124, 77, 0.4)')}
+          onMouseEnter={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 213, 79, 0.6)')}
+          onMouseLeave={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 235, 59, 0.4)')}
         >
-          {isConnected ? 'Connected' : 'Start Conversation'}
+          {isSaving ? 'Saving...' : isConnected ? 'Connected' : 'Start Conversation'}
         </button>
         
         <button
@@ -205,9 +273,9 @@ const playAudio = (base64Audio) => {
           disabled={!isConnected}
           style={{
             background: !isConnected 
-              ? '#ccc' 
-              : 'linear-gradient(135deg, #C45C3A 0%, #A04830 100%)',
-            color: '#E8F2ED',
+              ? '#FFF9E6' 
+              : 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
+            color: !isConnected ? '#C9A961' : '#5D4E37',
             border: 'none',
             padding: '16px 48px',
             fontSize: '18px',
@@ -215,7 +283,7 @@ const playAudio = (base64Audio) => {
             cursor: !isConnected ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s',
             fontWeight: '600',
-            boxShadow: isConnected ? '0 4px 16px rgba(196, 92, 58, 0.4)' : 'none'
+            boxShadow: isConnected ? '0 4px 16px rgba(255, 152, 0, 0.4)' : 'none'
           }}
         >
           Stop

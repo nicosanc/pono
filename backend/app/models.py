@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from app.database import Base
@@ -26,6 +27,7 @@ class Conversation(Base):
     messages = relationship("Message", back_populates="conversation")
     user = relationship("User", back_populates="conversations")
     summary = Column(Text, nullable=True)
+    emotion_data = Column(JSONB, nullable=True) # Sent to Hume AI for emotion analysis
     
 
 class Message(Base):

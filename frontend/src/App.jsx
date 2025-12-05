@@ -3,8 +3,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import VoiceChat from './components/VoiceChat';
 import ConversationHistory from './components/ConversationHistory';
 import TranscriptView from './components/TranscriptView';
+import Analytics from './components/Analytics';
 import Auth from './components/Auth';
 import Onboarding from './components/Onboarding';
+import Landing from './components/Landing';
 import './App.css';
 
 // Create React Query client
@@ -19,9 +21,12 @@ const queryClient = new QueryClient({
 
 function AppContent() {
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [currentView, setCurrentView] = useState('chat'); // 'chat' or 'analytics'
   const [token, setToken] = useState(null);
   const [userId, setUserId] = useState(null);
   const [onboardingCompleted, setOnboardingCompleted] = useState(null); // null = loading
+  const [showAuth, setShowAuth] = useState(false); // Show landing page by default
+  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
 
   // Check for existing token on mount
   useEffect(() => {
@@ -75,9 +80,21 @@ function AppContent() {
     setOnboardingCompleted(true);
   };
 
-  // Show auth screen if not logged in
+  const handleShowAuth = (mode) => {
+    setAuthMode(mode);
+    setShowAuth(true);
+  };
+
+  const handleBackToLanding = () => {
+    setShowAuth(false);
+  };
+
+  // Show landing page if not logged in and hasn't clicked auth buttons
   if (!token || !userId) {
-    return <Auth onLogin={handleLogin} />;
+    if (!showAuth) {
+      return <Landing onShowAuth={handleShowAuth} />;
+    }
+    return <Auth onLogin={handleLogin} initialMode={authMode} onBack={handleBackToLanding} />;
   }
 
   // Show loading while checking onboarding status
@@ -88,8 +105,8 @@ function AppContent() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        background: 'linear-gradient(180deg, #E8F2ED 0%, #F4E8D8 50%, #FCEADE 100%)',
-        color: '#1B5F5A',
+        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
+        color: '#D4A017',
         fontSize: '20px'
       }}>
         Loading...
@@ -119,49 +136,80 @@ function AppContent() {
         flexDirection: 'column',
         alignItems: 'center',
         paddingTop: '40px',
-        background: 'linear-gradient(180deg, #E8F2ED 0%, #F4E8D8 50%, #FCEADE 100%)',
+        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
         position: 'fixed',
         top: 0,
         right: 0
       }}>
-        {/* Logout button - top right */}
-        <button
-          onClick={handleLogout}
-          style={{
-            position: 'absolute',
-            top: '20px',
-            right: '20px',
-            background: 'linear-gradient(135deg, #C45C3A 0%, #A04830 100%)',
-            color: '#E8F2ED',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          Logout
-        </button>
-
-        {/* Title - centered */}
-        <h1 style={{ 
-          color: '#1B5F5A', 
-          fontWeight: '700', 
-          fontSize: '48px',
-          marginBottom: '60px',
-          marginTop: '80px',
-          textAlign: 'center'
+        {/* Top right buttons */}
+        <div style={{
+          position: 'absolute',
+          top: '20px',
+          right: '20px',
+          display: 'flex',
+          gap: '10px'
         }}>
-          Pono Voice Coach
-        </h1>
-        {selectedConversation ? (
-          <TranscriptView 
-            conversationId={selectedConversation}
-            token={token}
-            onBack={() => setSelectedConversation(null)}
-          />
+          <button
+            onClick={() => setCurrentView(currentView === 'chat' ? 'analytics' : 'chat')}
+            style={{
+              background: 'linear-gradient(135deg, #FFD54F 0%, #FFC107 100%)',
+              color: '#5D4E37',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              boxShadow: '0 4px 12px rgba(255, 193, 7, 0.3)'
+            }}
+          >
+            {currentView === 'chat' ? 'Analytics' : 'Chat'}
+          </button>
+          <button
+            onClick={handleLogout}
+            style={{
+              background: 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
+              color: '#5D4E37',
+              border: 'none',
+              padding: '10px 20px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)'
+            }}
+          >
+            Logout
+          </button>
+        </div>
+
+        {/* Conditional rendering based on current view */}
+        {currentView === 'analytics' ? (
+          <div style={{ width: '100%', height: '100%', paddingTop: '20px' }}>
+            <Analytics token={token} />
+          </div>
         ) : (
-          <VoiceChat token={token} userId={userId} />
+          <>
+            {/* Title - centered */}
+            <h1 style={{ 
+              color: '#D4A017', 
+              fontWeight: '700', 
+              fontSize: '48px',
+              marginBottom: '60px',
+              marginTop: '80px',
+              textAlign: 'center',
+              textShadow: '0 2px 8px rgba(255, 193, 7, 0.2)'
+            }}>
+              Pono Voice Coach
+            </h1>
+            {selectedConversation ? (
+              <TranscriptView 
+                conversationId={selectedConversation}
+                token={token}
+                onBack={() => setSelectedConversation(null)}
+              />
+            ) : (
+              <VoiceChat token={token} userId={userId} />
+            )}
+          </>
         )}
       </div>
     </div>
