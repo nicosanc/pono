@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { API_URL } from '../config';
 
 function Analytics({ token }) {
   const { data, isLoading, error } = useQuery({
     queryKey: ['analytics'],
     queryFn: async () => {
-      const response = await fetch('http://localhost:8000/api/analytics', {
+      const response = await fetch(`${API_URL}/api/analytics`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

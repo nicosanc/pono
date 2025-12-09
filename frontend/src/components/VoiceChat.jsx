@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import VoiceWaveform from './VoiceWaveform';
+import { WS_URL } from '../config';
 
 function VoiceChat({ token, userId }) {
   const queryClient = useQueryClient();
@@ -30,7 +31,7 @@ function VoiceChat({ token, userId }) {
     };
     
     // 1. Connect WebSocket with token
-    wsRef.current = new WebSocket(`ws://localhost:8000/ws/voice?token=${token}`);
+    wsRef.current = new WebSocket(`${WS_URL}/ws/voice?token=${token}`);
     
     wsRef.current.onopen = () => {
       setIsConnected(true);
@@ -250,9 +251,9 @@ const playAudio = (base64Audio) => {
           disabled={isConnected || isSaving}
           style={{
             background: (isConnected || isSaving)
-              ? 'linear-gradient(135deg, #FFD54F 0%, #FFC107 100%)' 
-              : 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)',
-            color: '#5D4E37',
+              ? 'linear-gradient(135deg, #89C4D8 0%, #7AB3C7 100%)' 
+              : 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+            color: '#FFFEF9',
             border: 'none',
             padding: '16px 48px',
             fontSize: '18px',
@@ -260,10 +261,10 @@ const playAudio = (base64Audio) => {
             cursor: (isConnected || isSaving) ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s',
             fontWeight: '600',
-            boxShadow: '0 4px 16px rgba(255, 235, 59, 0.4)'
+            boxShadow: '0 4px 16px rgba(168, 216, 234, 0.4)'
           }}
-          onMouseEnter={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 6px 20px rgba(255, 213, 79, 0.6)')}
-          onMouseLeave={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 4px 16px rgba(255, 235, 59, 0.4)')}
+          onMouseEnter={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 6px 20px rgba(168, 216, 234, 0.6)')}
+          onMouseLeave={(e) => !(isConnected || isSaving) && (e.currentTarget.style.boxShadow = '0 4px 16px rgba(168, 216, 234, 0.4)')}
         >
           {isSaving ? 'Saving...' : isConnected ? 'Connected' : 'Start Conversation'}
         </button>
@@ -273,9 +274,9 @@ const playAudio = (base64Audio) => {
           disabled={!isConnected}
           style={{
             background: !isConnected 
-              ? '#FFF9E6' 
-              : 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
-            color: !isConnected ? '#C9A961' : '#5D4E37',
+              ? '#E8E0F5' 
+              : 'linear-gradient(135deg, #D4A5C0 0%, #C99BB0 100%)',
+            color: !isConnected ? '#C2B5D8' : '#FFFEF9',
             border: 'none',
             padding: '16px 48px',
             fontSize: '18px',
@@ -283,7 +284,7 @@ const playAudio = (base64Audio) => {
             cursor: !isConnected ? 'not-allowed' : 'pointer',
             transition: 'all 0.3s',
             fontWeight: '600',
-            boxShadow: isConnected ? '0 4px 16px rgba(255, 152, 0, 0.4)' : 'none'
+            boxShadow: isConnected ? '0 4px 16px rgba(212, 165, 192, 0.4)' : 'none'
           }}
         >
           Stop

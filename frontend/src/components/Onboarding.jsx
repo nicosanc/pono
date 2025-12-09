@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import VoiceWaveform from './VoiceWaveform';
+import { WS_URL, API_URL } from '../config';
 
 function Onboarding({ token, userId, onComplete }) {
   const [isActive, setIsActive] = useState(false);
@@ -40,17 +41,22 @@ function Onboarding({ token, userId, onComplete }) {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const source = audioContextRef.current.createMediaStreamSource(stream);
       
-      // Create analyser for visualization
+      // Add gain node to boost signal
+      const gainNode = audioContextRef.current.createGain();
+      gainNode.gain.value = 3.0;
+      source.connect(gainNode);
+      
+      // Create analyser for AI voice visualization only (not connected to microphone)
       const analyser = audioContextRef.current.createAnalyser();
-      source.connect(analyser);
+      analyser.fftSize = 2048;
       setAnalyserNode(analyser);
       
       // Create worklet for audio processing
       workletNodeRef.current = new AudioWorkletNode(audioContextRef.current, 'audio-processor');
-      source.connect(workletNodeRef.current);
+      gainNode.connect(workletNodeRef.current);
       
       // Connect to backend WebSocket with onboarding flag
-      wsRef.current = new WebSocket(`ws://localhost:8000/ws/voice?token=${token}&onboarding=true`);
+      wsRef.current = new WebSocket(`${WS_URL}/ws/voice?token=${token}&onboarding=true`);
       
       wsRef.current.onopen = () => {
         setIsActive(true);
@@ -110,9 +116,10 @@ function Onboarding({ token, userId, onComplete }) {
           const source = audioContextRef.current.createBufferSource();
           source.buffer = audioBuffer;
           
-          // Connect to analyser for visualization, then to destination
+          // Connect model output to analyser for visualization
           if (analyserNode) {
             source.connect(analyserNode);
+            analyserNode.connect(audioContextRef.current.destination);
           } else {
             source.connect(audioContextRef.current.destination);
           }
@@ -157,7 +164,7 @@ function Onboarding({ token, userId, onComplete }) {
 
   const fetchLatestConversationId = async () => {
     try {
-      const res = await fetch(`http://localhost:8000/users/${userId}/conversations`, {
+      const res = await fetch(`${API_URL}/users/${userId}/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const conversations = await res.json();
@@ -177,7 +184,7 @@ function Onboarding({ token, userId, onComplete }) {
 
     try {
       const res = await fetch(
-        `http://localhost:8000/conversations/${conversationId}/complete-onboarding`,
+        `${API_URL}/conversations/${conversationId}/complete-onboarding`,
         {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${token}` }
@@ -202,18 +209,18 @@ function Onboarding({ token, userId, onComplete }) {
         left: 0,
         width: '100vw',
         height: '100vh',
-        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
+        background: 'linear-gradient(135deg, #FFFEF9 0%, #E8E0F5 50%, #D4C5E8 100%)',
         margin: 0,
         padding: 0
       }}
     >
       <h1
         style={{
-          color: '#D4A017',
+          color: '#8B7CA8',
           fontWeight: '700',
           fontSize: '48px',
           marginBottom: '20px',
-          textShadow: '0 2px 8px rgba(255, 193, 7, 0.2)'
+          textShadow: '0 2px 8px rgba(184, 169, 212, 0.2)'
         }}
       >
         Welcome to Pono
@@ -221,7 +228,7 @@ function Onboarding({ token, userId, onComplete }) {
 
       <p
         style={{
-          color: '#C9A961',
+          color: '#9D8CB5',
           fontSize: '18px',
           marginBottom: '60px',
           textAlign: 'center',
@@ -237,8 +244,8 @@ function Onboarding({ token, userId, onComplete }) {
         <button
           onClick={startOnboarding}
           style={{
-            background: 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)',
-            color: '#5D4E37',
+            background: 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+            color: '#FFFEF9',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -246,16 +253,16 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: 'pointer',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: '0 4px 12px rgba(255, 213, 79, 0.4)',
+            boxShadow: '0 4px 12px rgba(168, 216, 234, 0.4)',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 213, 79, 0.6)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(168, 216, 234, 0.6)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 213, 79, 0.4)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 216, 234, 0.4)';
           }}
         >
           Start Consultation
@@ -266,8 +273,8 @@ function Onboarding({ token, userId, onComplete }) {
         <button
           onClick={stopOnboarding}
           style={{
-            background: 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
-            color: '#5D4E37',
+            background: 'linear-gradient(135deg, #D4A5C0 0%, #C99BB0 100%)',
+            color: '#FFFEF9',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -275,16 +282,16 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: 'pointer',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: '0 4px 12px rgba(255, 152, 0, 0.4)',
+            boxShadow: '0 4px 12px rgba(212, 165, 192, 0.4)',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
             e.currentTarget.style.transform = 'translateY(-2px)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(196, 92, 58, 0.4)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(212, 165, 192, 0.6)';
           }}
           onMouseLeave={(e) => {
             e.currentTarget.style.transform = 'translateY(0)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 152, 0, 0.4)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 165, 192, 0.4)';
           }}
         >
           Stop
@@ -297,9 +304,9 @@ function Onboarding({ token, userId, onComplete }) {
           disabled={!conversationId}
           style={{
             background: conversationId
-              ? 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)'
-              : '#FFF9E6',
-            color: conversationId ? '#5D4E37' : '#C9A961',
+              ? 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)'
+              : '#E8E0F5',
+            color: conversationId ? '#FFFEF9' : '#C2B5D8',
             border: 'none',
             padding: '15px 40px',
             borderRadius: '30px',
@@ -307,19 +314,19 @@ function Onboarding({ token, userId, onComplete }) {
             cursor: conversationId ? 'pointer' : 'not-allowed',
             fontWeight: '600',
             marginTop: '30px',
-            boxShadow: conversationId ? '0 4px 12px rgba(255, 213, 79, 0.4)' : 'none',
+            boxShadow: conversationId ? '0 4px 12px rgba(168, 216, 234, 0.4)' : 'none',
             transition: 'all 0.2s'
           }}
           onMouseEnter={(e) => {
             if (conversationId) {
               e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(255, 213, 79, 0.6)';
+              e.currentTarget.style.boxShadow = '0 6px 16px rgba(168, 216, 234, 0.6)';
             }
           }}
           onMouseLeave={(e) => {
             if (conversationId) {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 213, 79, 0.4)';
+              e.currentTarget.style.boxShadow = '0 4px 12px rgba(168, 216, 234, 0.4)';
             }
           }}
         >

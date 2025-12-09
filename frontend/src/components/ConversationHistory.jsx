@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
+import { API_URL } from '../config';
 
 // Add keyframe animation
 const styleSheet = document.styleSheets[0];
@@ -36,7 +37,7 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
   const { data: conversations = [], isLoading } = useQuery({
     queryKey: ['conversations', userId],
     queryFn: async () => {
-      const res = await fetch(`http://localhost:8000/users/${userId}/conversations`, {
+      const res = await fetch(`${API_URL}/users/${userId}/conversations`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (!res.ok) throw new Error('Failed to fetch conversations');
@@ -50,7 +51,7 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
     queryKey: ['search', debouncedQuery],
     queryFn: async () => {
       const res = await fetch(
-        `http://localhost:8000/conversations/search?query=${encodeURIComponent(debouncedQuery)}`,
+        `${API_URL}/conversations/search?query=${encodeURIComponent(debouncedQuery)}`,
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
       if (!res.ok) throw new Error('Failed to search conversations');
@@ -72,7 +73,7 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
   // Delete mutation with automatic refetch
   const deleteMutation = useMutation({
     mutationFn: async (conversationId) => {
-      const res = await fetch(`http://localhost:8000/conversations/${conversationId}`, {
+      const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -99,10 +100,10 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
   return (
     <div style={{ 
       height: '100vh',
-      borderRight: '2px solid #FFD54F', 
+      borderRight: '2px solid #D4C5E8', 
       padding: '20px 15px 20px 20px',
       overflowY: 'auto',
-      background: 'linear-gradient(180deg, #FFF9E6 0%, #FFE082 100%)',
+      background: 'linear-gradient(180deg, #FFFEF9 0%, #E8E0F5 100%)',
       position: 'fixed',
       left: 0,
       top: 0,
@@ -110,7 +111,7 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
       minWidth: '250px',
       boxSizing: 'border-box'
     }}>
-      <h2 style={{ marginBottom: '15px', fontSize: '18px', color: '#D4A017' }}>Conversations</h2>
+      <h2 style={{ marginBottom: '15px', fontSize: '18px', color: '#8B7CA8' }}>Conversations</h2>
       
       {/* Search Bar */}
       <div style={{ position: 'relative', marginBottom: '20px' }}>
@@ -123,9 +124,9 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
             width: '100%',
             padding: '10px 35px 10px 10px',
             borderRadius: '8px',
-            border: '1px solid #FFD54F',
-            backgroundColor: '#FFFEF0',
-            color: '#5D4E37',
+            border: '1px solid #D4C5E8',
+            backgroundColor: '#FFFEF9',
+            color: '#8B7CA8',
             fontSize: '14px',
             boxSizing: 'border-box'
           }}
@@ -142,7 +143,7 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
               border: 'none',
               cursor: 'pointer',
               fontSize: '16px',
-              color: '#FFC107'
+              color: '#B8A9D4'
             }}
           >
             ✕
@@ -151,9 +152,9 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
       </div>
 
       {/* Loading/Empty states */}
-      {isSearching && <div style={{ color: '#D4A017', textAlign: 'center', padding: '20px' }}>Searching...</div>}
+      {isSearching && <div style={{ color: '#8B7CA8', textAlign: 'center', padding: '20px' }}>Searching...</div>}
       {isSearchMode && !isSearching && displayList?.length === 0 && (
-        <div style={{ color: '#D4A017', textAlign: 'center', padding: '20px' }}>No results found</div>
+        <div style={{ color: '#8B7CA8', textAlign: 'center', padding: '20px' }}>No results found</div>
       )}
 
       {/* Conversation List */}
@@ -165,32 +166,32 @@ function ConversationHistory({ userId, token, onSelectConversation }) {
             padding: '12px', 
             marginBottom: '10px',
             marginRight: '10px',
-            border: '1px solid #FFD54F',
+            border: '1px solid #D4C5E8',
             cursor: 'pointer',
             borderRadius: '8px',
-            backgroundColor: '#FFFEF0',
+            backgroundColor: '#FFFEF9',
             transition: 'all 0.2s',
             animation: (index === 0 && conv.id === latestConvId) ? 'slideIn 0.5s ease-out' : 'none',
             opacity: 1,
-            boxShadow: '0 2px 8px rgba(255, 213, 79, 0.2)'
+            boxShadow: '0 2px 8px rgba(212, 197, 232, 0.2)'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#FFE082';
-            e.currentTarget.querySelector('strong').style.color = '#5D4E37';
-            e.currentTarget.querySelectorAll('div')[0].style.color = '#5D4E37';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(255, 213, 79, 0.4)';
+            e.currentTarget.style.backgroundColor = '#E8E0F5';
+            e.currentTarget.querySelector('strong').style.color = '#8B7CA8';
+            e.currentTarget.querySelectorAll('div')[0].style.color = '#8B7CA8';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(212, 197, 232, 0.4)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#FFFEF0';
-            e.currentTarget.querySelector('strong').style.color = '#5D4E37';
-            e.currentTarget.querySelectorAll('div')[0].style.color = '#C9A961';
-            e.currentTarget.style.boxShadow = '0 2px 8px rgba(255, 213, 79, 0.2)';
+            e.currentTarget.style.backgroundColor = '#FFFEF9';
+            e.currentTarget.querySelector('strong').style.color = '#8B7CA8';
+            e.currentTarget.querySelectorAll('div')[0].style.color = '#9D8CB5';
+            e.currentTarget.style.boxShadow = '0 2px 8px rgba(212, 197, 232, 0.2)';
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <strong style={{ color: '#5D4E37' }}>{conv.title}</strong>
-              <div style={{ fontSize: '12px', color: '#C9A961' }}>
+              <strong style={{ color: '#8B7CA8' }}>{conv.title}</strong>
+              <div style={{ fontSize: '12px', color: '#9D8CB5' }}>
                 {new Date(conv.created_at).toLocaleDateString()} • {conv.message_count} messages
                 {isSearchMode && conv.distance !== undefined && (
                   <span style={{ marginLeft: '8px', fontStyle: 'italic' }}>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { API_URL } from '../config';
 
 function Auth({ onLogin, initialMode = 'login', onBack }) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login');
@@ -13,7 +14,7 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
     const endpoint = isLogin ? '/login' : '/register';
     
     try {
-      const res = await fetch(`http://localhost:8000${endpoint}`, {
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
@@ -41,7 +42,7 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
       display: 'flex',
       justifyContent: 'center',
       alignItems: 'center',
-      background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)'
+      background: 'linear-gradient(135deg, #FFFEF9 0%, #E8E0F5 50%, #D4C5E8 100%)'
     }}>
       {onBack && (
         <button
@@ -51,7 +52,7 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
             top: '20px',
             left: '20px',
             background: 'transparent',
-            color: '#D4A017',
+            color: '#B8A9D4',
             border: 'none',
             fontSize: '16px',
             cursor: 'pointer',
@@ -65,15 +66,15 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
         </button>
       )}
       <div style={{
-        background: 'rgba(255, 254, 240, 0.95)',
+        background: 'rgba(255, 255, 255, 0.95)',
         padding: '40px',
         borderRadius: '15px',
-        boxShadow: '0 8px 24px rgba(255, 213, 79, 0.3)',
+        boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)',
         width: '100%',
         maxWidth: '400px',
-        border: '1px solid rgba(255, 213, 79, 0.3)'
+        border: '1px solid rgba(212, 197, 232, 0.3)'
       }}>
-        <h1 style={{ color: '#D4A017', marginBottom: '30px', textAlign: 'center' }}>
+        <h1 style={{ color: '#8B7CA8', marginBottom: '30px', textAlign: 'center' }}>
           {isLogin ? 'Login' : 'Register'}
         </h1>
 
@@ -88,11 +89,11 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
               width: '100%',
               padding: '12px',
               marginBottom: '15px',
-              border: '1px solid #FFD54F',
+              border: '1px solid #D4C5E8',
               borderRadius: '8px',
               fontSize: '16px',
               boxSizing: 'border-box',
-              backgroundColor: '#FFFEF0'
+              backgroundColor: '#FFFEF9'
             }}
           />
 
@@ -106,16 +107,16 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
               width: '100%',
               padding: '12px',
               marginBottom: '20px',
-              border: '1px solid #FFD54F',
+              border: '1px solid #D4C5E8',
               borderRadius: '8px',
               fontSize: '16px',
               boxSizing: 'border-box',
-              backgroundColor: '#FFFEF0'
+              backgroundColor: '#FFFEF9'
             }}
           />
 
           {error && (
-            <p style={{ color: '#FF9800', fontSize: '14px', marginBottom: '15px' }}>
+            <p style={{ color: '#D89CA8', fontSize: '14px', marginBottom: '15px' }}>
               {error}
             </p>
           )}
@@ -124,8 +125,8 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
             type="submit"
             style={{
               width: '100%',
-              background: 'linear-gradient(135deg, #FFEB3B 0%, #FFD54F 100%)',
-              color: '#5D4E37',
+              background: 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+              color: '#FFFEF9',
               border: 'none',
               padding: '14px',
               fontSize: '18px',
@@ -133,17 +134,17 @@ function Auth({ onLogin, initialMode = 'login', onBack }) {
               cursor: 'pointer',
               fontWeight: '600',
               marginBottom: '15px',
-              boxShadow: '0 4px 12px rgba(255, 213, 79, 0.3)'
+              boxShadow: '0 4px 12px rgba(168, 216, 234, 0.3)'
             }}
           >
             {isLogin ? 'Login' : 'Register'}
           </button>
 
-          <p style={{ textAlign: 'center', color: '#C9A961', fontSize: '14px' }}>
+          <p style={{ textAlign: 'center', color: '#C2B5D8', fontSize: '14px' }}>
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <span
               onClick={() => setIsLogin(!isLogin)}
-              style={{ color: '#FFC107', cursor: 'pointer', textDecoration: 'underline' }}
+              style={{ color: '#B8A9D4', cursor: 'pointer', textDecoration: 'underline' }}
             >
               {isLogin ? 'Register' : 'Login'}
             </span>

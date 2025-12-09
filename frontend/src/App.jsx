@@ -7,6 +7,7 @@ import Analytics from './components/Analytics';
 import Auth from './components/Auth';
 import Onboarding from './components/Onboarding';
 import Landing from './components/Landing';
+import { API_URL } from './config';
 import './App.css';
 
 // Create React Query client
@@ -45,7 +46,7 @@ function AppContent() {
 
     const fetchUserStatus = async () => {
       try {
-        const res = await fetch(`http://localhost:8000/me`, {
+        const res = await fetch(`${API_URL}/me`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -105,8 +106,8 @@ function AppContent() {
         alignItems: 'center',
         justifyContent: 'center',
         height: '100vh',
-        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
-        color: '#D4A017',
+        background: 'linear-gradient(135deg, #FFFEF9 0%, #E8E0F5 50%, #D4C5E8 100%)',
+        color: '#8B7CA8',
         fontSize: '20px'
       }}>
         Loading...
@@ -136,7 +137,7 @@ function AppContent() {
         flexDirection: 'column',
         alignItems: 'center',
         paddingTop: '40px',
-        background: 'linear-gradient(135deg, #FFFEF0 0%, #FFF9E6 50%, #FFE082 100%)',
+        background: 'linear-gradient(135deg, #FFFEF9 0%, #E8E0F5 50%, #D4C5E8 100%)',
         position: 'fixed',
         top: 0,
         right: 0
@@ -152,14 +153,14 @@ function AppContent() {
           <button
             onClick={() => setCurrentView(currentView === 'chat' ? 'analytics' : 'chat')}
             style={{
-              background: 'linear-gradient(135deg, #FFD54F 0%, #FFC107 100%)',
-              color: '#5D4E37',
+              background: 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+              color: '#FFFEF9',
               border: 'none',
               padding: '10px 20px',
               borderRadius: '8px',
               cursor: 'pointer',
               fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(255, 193, 7, 0.3)'
+              boxShadow: '0 4px 12px rgba(168, 216, 234, 0.3)'
             }}
           >
             {currentView === 'chat' ? 'Analytics' : 'Chat'}
@@ -167,14 +168,14 @@ function AppContent() {
           <button
             onClick={handleLogout}
             style={{
-              background: 'linear-gradient(135deg, #FFB74D 0%, #FF9800 100%)',
-              color: '#5D4E37',
+              background: 'linear-gradient(135deg, #D4A5C0 0%, #C99BB0 100%)',
+              color: '#FFFEF9',
               border: 'none',
               padding: '10px 20px',
               borderRadius: '8px',
               cursor: 'pointer',
               fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(255, 152, 0, 0.3)'
+              boxShadow: '0 4px 12px rgba(212, 165, 192, 0.3)'
             }}
           >
             Logout
@@ -190,13 +191,13 @@ function AppContent() {
           <>
             {/* Title - centered */}
             <h1 style={{ 
-              color: '#D4A017', 
+              color: '#8B7CA8', 
               fontWeight: '700', 
               fontSize: '48px',
               marginBottom: '60px',
               marginTop: '80px',
               textAlign: 'center',
-              textShadow: '0 2px 8px rgba(255, 193, 7, 0.2)'
+              textShadow: '0 2px 8px rgba(184, 169, 212, 0.2)'
             }}>
               Pono Voice Coach
             </h1>

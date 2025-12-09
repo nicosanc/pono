@@ -11,9 +11,18 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI()
 
 # CORS for React frontend - MUST come before routers
+import os
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+]
+if FRONTEND_URL and FRONTEND_URL not in CORS_ORIGINS:
+    CORS_ORIGINS.append(FRONTEND_URL)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],
+    allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

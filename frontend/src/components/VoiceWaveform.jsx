@@ -43,9 +43,9 @@ function VoiceWaveform({ isActive, analyserNode }) {
 
       // Create gradient from center outward
       const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, currentRadius);
-      gradient.addColorStop(0, '#E87C4D'); // Orange/coral center
-      gradient.addColorStop(0.5, '#5A8E8C'); // Teal middle
-      gradient.addColorStop(1, '#7A9B7F'); // Sage outer
+      gradient.addColorStop(0, '#C2E0F4'); // Light sky blue center
+      gradient.addColorStop(0.5, '#B8A9D4'); // Lavender middle
+      gradient.addColorStop(1, '#9B84BD'); // Deep purple outer
 
       // Draw filled pulsing circle
       ctx.beginPath();
@@ -54,10 +54,10 @@ function VoiceWaveform({ isActive, analyserNode }) {
       ctx.fill();
 
       // Draw outer glow ring
-      ctx.strokeStyle = '#5A8E8C';
+      ctx.strokeStyle = '#B8A9D4';
       ctx.lineWidth = 3;
       ctx.shadowBlur = 20 + (normalizedVolume * 20); // Stronger glow when louder
-      ctx.shadowColor = '#5A8E8C';
+      ctx.shadowColor = '#B8A9D4';
       ctx.stroke();
 
       animationRef.current = requestAnimationFrame(draw);
