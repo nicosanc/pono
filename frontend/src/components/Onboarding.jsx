@@ -235,7 +235,7 @@ function Onboarding({ token, userId, onComplete }) {
           maxWidth: '600px'
         }}
       >
-        Let's get to know you. Tell me about yourself, your goals, and what you'd like to work on.
+        Let's get to know you. Press Start Consultation and say "Hi" to begin.
       </p>
 
       <VoiceWaveform isActive={isActive} analyserNode={analyserNode} />
