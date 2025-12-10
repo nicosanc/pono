@@ -10,6 +10,7 @@ function Onboarding({ token, userId, onComplete }) {
   const wsRef = useRef(null);
   const audioContextRef = useRef(null);
   const workletNodeRef = useRef(null);
+  const analyserRef = useRef(null);
   const scheduledTimeRef = useRef(0);
   
   // Latency tracking
@@ -49,6 +50,7 @@ function Onboarding({ token, userId, onComplete }) {
       // Create analyser for AI voice visualization only (not connected to microphone)
       const analyser = audioContextRef.current.createAnalyser();
       analyser.fftSize = 2048;
+      analyserRef.current = analyser; // use ref to avoid stale closure in ws handler
       setAnalyserNode(analyser);
       
       // Create worklet for audio processing
@@ -117,9 +119,10 @@ function Onboarding({ token, userId, onComplete }) {
           source.buffer = audioBuffer;
           
           // Connect model output to analyser for visualization
-          if (analyserNode) {
-            source.connect(analyserNode);
-            analyserNode.connect(audioContextRef.current.destination);
+          const analyser = analyserRef.current;
+          if (analyser) {
+            source.connect(analyser);
+            analyser.connect(audioContextRef.current.destination);
           } else {
             source.connect(audioContextRef.current.destination);
           }
