@@ -19,6 +19,7 @@ from hume.expression_measurement.stream import StreamErrorMessage
 import tempfile
 from datetime import datetime, timedelta
 from openai import AsyncOpenAI
+from app.services.action_items_service import generate_action_items
 
 router = APIRouter()
 
@@ -256,7 +257,29 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
                     if history_text
                     else ""
                 )
-                full_instructions = SOCIAL_COACH_PROMPT + user_context + history_context
+
+                # Add action items to the prompt if they exist and are still open
+                action_items = (
+                    db.query(models.ActionItem)
+                    .filter(
+                        models.ActionItem.user_id == user_id,
+                        models.ActionItem.status == 'open',
+                    )
+                    .all()
+                )
+
+                # Turn them into a string to inject into the prompt along with conversation history and user context
+                action_item_text = ""
+                for item in action_items:
+                    action_item_text += f"{item.title} | {item.status} | {item.description}\n"
+                
+                action_item_context = (
+                    f"ACTION ITEMS: \n{action_item_text}"
+                    if action_item_text
+                    else ""
+                )
+
+                full_instructions = SOCIAL_COACH_PROMPT + user_context + history_context + action_item_context
 
             session_update = {
                 "type": "session.update",
@@ -318,6 +341,17 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
                 # Generate embedding and summary
                 conversation.embedding = generate_conversation_embedding(transcript)
                 conversation.summary = generate_conversation_summary(transcript)
+                action_items = generate_action_items(conversation.summary)
+                for item in action_items:
+                    action_item = models.ActionItem(
+                        user_id=conversation.user_id,
+                        title=item['title'],
+                        status=item['status'],
+                        description=item['description'],
+                        conversation_id_created=conversation.id,
+                        created_at=datetime.now()
+                    )
+                    db.add(action_item)
                 db.commit()
             except Exception as e:
                 print(f"Failed to save conversation: {e}")

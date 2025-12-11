@@ -38,3 +38,15 @@ class Message(Base):
     role = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
     conversation = relationship("Conversation", back_populates="messages")
+
+class ActionItem(Base):
+    __tablename__ = "action_items"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String)
+    conversation_id_created = Column(Integer, ForeignKey("conversations.id"))
+    conversation_id_closed = Column(Integer, ForeignKey("conversations.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    closed_at = Column(DateTime, nullable=True)
+    description = Column(Text, nullable=True)
+    status = Column(String, default="open")

@@ -32,21 +32,18 @@ def get_sentiment_analytics(
         return {"error": "No conversations found"}
 
     total_sessions = len(conversations)
-    # Avg duration in minutes
-    avg_duration = round(
-        sum(conversation.duration for conversation in conversations)
-        / total_sessions
-        / 60,
-        1,
-    )
+
+    # Safely compute average duration (seconds -> minutes), ignoring None durations
+    total_duration_seconds = sum((conversation.duration or 0) for conversation in conversations)
+    avg_duration = round((total_duration_seconds / total_sessions) / 60, 1) if total_sessions > 0 else 0.0
     emotional_trends = [
         {
             "date": conversation.created_at.isoformat(),
-            "score": calculate_sentiment_score(conversation.emotion_data),
-           "dominant_emotion": (
-            max(conversation.emotion_data.get("emotions", {}).items(), key=lambda x: x[1])[0]
-            if conversation.emotion_data and conversation.emotion_data.get("emotions")
-            else "Unknown"
+            "score": calculate_sentiment_score(conversation.emotion_data) if conversation.emotion_data else 0,
+            "dominant_emotion": (
+                max(conversation.emotion_data.get("emotions", {}).items(), key=lambda x: x[1])[0]
+                if conversation.emotion_data and conversation.emotion_data.get("emotions")
+                else "Unknown"
             ),
         }
         for conversation in reversed(conversations)

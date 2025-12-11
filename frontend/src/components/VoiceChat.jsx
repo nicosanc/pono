@@ -251,8 +251,8 @@ const playAudio = (base64Audio) => {
           disabled={isConnected || isSaving}
           style={{
             background: (isConnected || isSaving)
-              ? 'linear-gradient(135deg, #89C4D8 0%, #7AB3C7 100%)' 
-              : 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+              ? '#89C4D8'
+              : '#5FA3BD',
             color: '#FFFEF9',
             border: 'none',
             padding: '16px 48px',
@@ -275,7 +275,7 @@ const playAudio = (base64Audio) => {
           style={{
             background: !isConnected 
               ? '#E8E0F5' 
-              : 'linear-gradient(135deg, #D4A5C0 0%, #C99BB0 100%)',
+              : '#C99BB0',
             color: !isConnected ? '#C2B5D8' : '#FFFEF9',
             border: 'none',
             padding: '16px 48px',

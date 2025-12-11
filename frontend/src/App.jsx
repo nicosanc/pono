@@ -137,7 +137,7 @@ function AppContent() {
         flexDirection: 'column',
         alignItems: 'center',
         paddingTop: '40px',
-        background: 'linear-gradient(135deg, #FFFEF9 0%, #E8E0F5 50%, #D4C5E8 100%)',
+        background: 'linear-gradient(135deg, #FFFFFF 0%, #F8F5FC 40%, #EFE7F8 100%)',
         position: 'fixed',
         top: 0,
         right: 0
@@ -153,7 +153,7 @@ function AppContent() {
           <button
             onClick={() => setCurrentView(currentView === 'chat' ? 'analytics' : 'chat')}
             style={{
-              background: 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)',
+              background: '#5FA3BD',
               color: '#FFFEF9',
               border: 'none',
               padding: '10px 20px',
@@ -168,7 +168,7 @@ function AppContent() {
           <button
             onClick={handleLogout}
             style={{
-              background: 'linear-gradient(135deg, #D4A5C0 0%, #C99BB0 100%)',
+              background: '#C99BB0',
               color: '#FFFEF9',
               border: 'none',
               padding: '10px 20px',

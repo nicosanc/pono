@@ -43,17 +43,23 @@ function TranscriptView({ conversationId, token, onBack }) {
             key={msg.id}
             style={{
               padding: '15px',
-              borderRadius: '10px',
-              backgroundColor: msg.role === 'user' ? '#E8F2ED' : '#F4E8D8',
-              border: `1px solid ${msg.role === 'user' ? '#7A9B7F' : '#E87C4D'}`,
+              borderRadius: '12px',
+              background: msg.role === 'user'
+                ? 'linear-gradient(135deg, #A8D8EA 0%, #89C4D8 100%)' // teal for user
+                : 'linear-gradient(135deg, #F5B7A3 0%, #EBA08D 100%)', // peach for coach
+              border: 'none',
               alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-              maxWidth: '70%'
+              maxWidth: '70%',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.10)',
+              color: '#FFFFFF',
             }}
           >
-            <strong style={{ color: msg.role === 'user' ? '#2B4C5F' : '#1B5F5A' }}>
+            <strong style={{ color: '#FFFFFF' }}>
               {msg.role === 'user' ? 'You' : 'Coach'}
             </strong>
-            <p style={{ margin: '5px 0 0', color: '#3D2E27' }}>{msg.content}</p>
+            <p style={{ margin: '5px 0 0', color: '#FFFFFF', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+              {msg.content}
+            </p>
           </div>
         ))}
       </div>
