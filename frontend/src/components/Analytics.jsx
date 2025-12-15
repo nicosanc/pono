@@ -3,6 +3,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { API_URL } from '../config';
 
 function Analytics({ token }) {
+  // Polarity map aligned with hume_service TOTAL_EMOTIONS
+  const negativeEmotions = new Set(['shame', 'guilt', 'embarrassment', 'anxiety', 'doubt', 'anger', 'sadness']);
+
   const { data, isLoading, error } = useQuery({
     queryKey: ['analytics'],
     queryFn: async () => {
@@ -64,48 +67,63 @@ function Analytics({ token }) {
         height: '100%',
         width: '100%'
       }}>
-        {/* Top Left - Total Sessions */}
-        <div style={{
-          background: 'rgba(255, 254, 249, 0.8)',
-          borderRadius: '20px',
-          padding: '40px',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(212, 197, 232, 0.4)',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)'
-        }}>
-          <div style={{ fontSize: '18px', opacity: 0.7, marginBottom: '15px', fontWeight: '600' }}>
-            Total Sessions
-          </div>
-          <div style={{ fontSize: '72px', fontWeight: '700', color: '#8B7CA8', marginBottom: '10px' }}>
-            {data.total_sessions}
-          </div>
-          <div style={{ fontSize: '14px', opacity: 0.6 }}>Last 30 days</div>
-        </div>
+        {/* Top Left - Action Items */}
+        <ActionItemsCard items={data.action_items || []} />
 
-        {/* Top Right - Avg Duration */}
+        {/* Top Right - Today's Top Emotions */}
         <div style={{
           background: 'rgba(255, 254, 249, 0.8)',
           borderRadius: '20px',
-          padding: '40px',
+          padding: '36px',
           backdropFilter: 'blur(10px)',
           border: '1px solid rgba(212, 197, 232, 0.4)',
           display: 'flex',
           flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)'
+          boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)',
+          gap: '18px',
+          minHeight: '220px'
         }}>
-          <div style={{ fontSize: '18px', opacity: 0.7, marginBottom: '15px', fontWeight: '600' }}>
-            Average Duration
+          <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B7CA8', marginBottom: '24px', textAlign: 'center' }}>
+            Today’s Top Emotions
           </div>
-          <div style={{ fontSize: '72px', fontWeight: '700', color: '#8B7CA8', marginBottom: '10px' }}>
-            {data.avg_duration}
+          <div style={{ display: 'flex', gap: '12px' }}>
+            {(data.emotional_trends?.[data.emotional_trends.length - 1]?.dominant_emotions || []).slice(0, 3).map((emo, idx) => {
+              const displayScore = Math.round(Math.abs(emo.score) * 100);
+              const isNegative = negativeEmotions.has((emo.emotion || '').toLowerCase());
+              const cardBg = isNegative
+                ? 'linear-gradient(135deg, rgba(245, 183, 163, 0.3) 0%, rgba(233, 150, 122, 0.3) 100%)'
+                : 'linear-gradient(135deg, rgba(168, 216, 234, 0.25) 0%, rgba(140, 191, 214, 0.25) 100%)';
+              const borderColor = isNegative ? 'rgba(233, 150, 122, 0.4)' : 'rgba(168, 216, 234, 0.35)';
+              return (
+                <div
+                  key={`${emo.emotion}-${idx}`}
+                  style={{
+                    flex: 1,
+                    background: cardBg,
+                    borderRadius: '12px',
+                    padding: '24px 18px',
+                    border: `1px solid ${borderColor}`,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+                    minHeight: '160px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    alignItems: 'center',
+                    textAlign: 'center'
+                  }}
+                >
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#5A7D6D' }}>
+                    {emo.emotion}
+                  </div>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: isNegative ? '#D86969' : '#8B7CA8' }}>
+                    {displayScore}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#9D8CB5' }}>today</div>
+                </div>
+              );
+            })}
           </div>
-          <div style={{ fontSize: '14px', opacity: 0.6 }}>minutes per session</div>
         </div>
 
         {/* Bottom Left - Emotional Trends Chart */}
@@ -117,7 +135,7 @@ function Analytics({ token }) {
           border: '1px solid rgba(212, 197, 232, 0.4)',
           boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)'
         }}>
-          <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '700', color: '#8B7CA8' }}>Emotional Trends</h2>
+          <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '700', color: '#8B7CA8', textAlign: 'center' }}>Emotional Trends</h2>
           <ResponsiveContainer width="100%" height="85%">
             <LineChart data={data.emotional_trends}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(184, 169, 212, 0.2)" />
@@ -159,7 +177,7 @@ function Analytics({ token }) {
           overflow: 'auto',
           boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)'
         }}>
-          <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '700', color: '#8B7CA8' }}>Recent Sessions</h2>
+          <h2 style={{ marginBottom: '20px', fontSize: '24px', fontWeight: '700', color: '#8B7CA8', textAlign: 'center' }}>Recent Sessions</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {data.recent_conversations.map((conv) => (
               <ConversationCard key={conv.id} conversation={conv} />
@@ -194,6 +212,8 @@ function ConversationCard({ conversation }) {
     return '#C99BB0';
   };
 
+  const topEmotions = conversation.dominant_emotions || [];
+
   return (
     <div style={{
       background: 'rgba(255, 254, 249, 0.9)',
@@ -224,6 +244,25 @@ function ConversationCard({ conversation }) {
         <div style={{ fontSize: '11px', opacity: 0.6, color: '#9D8CB5' }}>
           {new Date(conversation.date).toLocaleDateString()} • {Math.round(conversation.duration / 60)} min
         </div>
+        {topEmotions.length > 0 && (
+          <div style={{ display: 'flex', gap: '6px', marginTop: '8px', flexWrap: 'wrap' }}>
+            {topEmotions.slice(0, 3).map((emo, idx) => (
+              <span
+                key={`${emo.emotion}-${idx}`}
+                style={{
+                  background: 'rgba(168, 216, 234, 0.18)',
+                  color: '#5A7D6D',
+                  borderRadius: '10px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  border: '1px solid rgba(168, 216, 234, 0.4)'
+                }}
+              >
+                {emo.emotion}: {emo.score.toFixed(2)}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
       <div style={{
         fontSize: '20px',
@@ -234,6 +273,79 @@ function ConversationCard({ conversation }) {
       }}>
         {conversation.score.toFixed(0)}
       </div>
+    </div>
+  );
+}
+
+function ActionItemsCard({ items }) {
+  const hasItems = items && items.length > 0;
+  return (
+    <div style={{
+      background: 'rgba(255, 254, 249, 0.8)',
+      borderRadius: '20px',
+      padding: '28px',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(212, 197, 232, 0.4)',
+      boxShadow: '0 8px 24px rgba(184, 169, 212, 0.2)',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+      minHeight: '220px'
+    }}>
+      <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B7CA8', textAlign: 'center' }}>
+        Action Items
+      </div>
+      {!hasItems && (
+        <div style={{ fontSize: '14px', color: '#9D8CB5', opacity: 0.8 }}>
+          No action items yet.
+        </div>
+      )}
+      {hasItems && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {items.slice(0, 5).map((item, idx) => {
+            const status = (item.status || '').toLowerCase();
+            const isOpen = status !== 'closed';
+            const badgeColor = isOpen ? '#5FA3BD' : '#C2B5D8';
+            const badgeBg = isOpen ? 'rgba(95, 163, 189, 0.12)' : 'rgba(194, 181, 216, 0.18)';
+            return (
+              <div
+                key={`${item.title}-${idx}`}
+                style={{
+                  padding: '12px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 254, 249, 0.9)',
+                  border: '1px solid rgba(212, 197, 232, 0.3)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px' }}>
+                  <div style={{ fontWeight: 700, color: '#5A7D6D', fontSize: '14px', flex: 1 }}>
+                    {item.title}
+                  </div>
+                  <span style={{
+                    background: badgeBg,
+                    color: badgeColor,
+                    borderRadius: '10px',
+                    padding: '4px 10px',
+                    fontSize: '11px',
+                    border: `1px solid ${badgeColor}33`
+                  }}>
+                    {isOpen ? 'Open' : 'Closed'}
+                  </span>
+                </div>
+                {item.description && (
+                  <div style={{ fontSize: '12px', color: '#7A6F8F' }}>
+                    {item.description}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

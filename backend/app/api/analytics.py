@@ -30,7 +30,16 @@ def get_sentiment_analytics(
     )
     if not conversations:
         return {"error": "No conversations found"}
-
+    
+    action_items = (
+        db.query(models.ActionItem)
+        .filter(
+            models.ActionItem.user_id == current_user.id,
+            models.ActionItem.status == "open",
+        )
+        .all()
+    )
+    action_item_list = [{"title": item.title, "status": item.status, "description": item.description} for item in action_items]
     total_sessions = len(conversations)
 
     # Safely compute average duration (seconds -> minutes), ignoring None durations
@@ -45,6 +54,7 @@ def get_sentiment_analytics(
                 if conversation.emotion_data and conversation.emotion_data.get("emotions")
                 else "Unknown"
             ),
+            "dominant_emotions": dominant_emotion(conversation.emotion_data),
         }
         for conversation in reversed(conversations)
     ]
@@ -55,6 +65,7 @@ def get_sentiment_analytics(
             "date": conversation.created_at.isoformat(),
             "score": calculate_sentiment_score(conversation.emotion_data),
             "duration": conversation.duration,
+            "dominant_emotions": dominant_emotion(conversation.emotion_data),
         }
         for conversation in conversations[:10]
     ]
@@ -64,4 +75,12 @@ def get_sentiment_analytics(
         "avg_duration": avg_duration,
         "emotional_trends": emotional_trends,
         "recent_conversations": recent_conversations,
+        "action_items": action_item_list,
     }
+
+def dominant_emotion(emotion_data: dict) -> list[dict]:
+    if not emotion_data or not emotion_data.get("emotions"):
+        return []
+    emotions = emotion_data.get("emotions", {}).items()
+    top_3_emotions = sorted(emotions, key=lambda x: abs(x[1]), reverse=True)[:3]
+    return [{"emotion": emotion, "score": score} for emotion, score in top_3_emotions]

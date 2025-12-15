@@ -10,24 +10,24 @@ load_dotenv()
 
 # Weights for positive emotions to calculate weighted average
 POSITIVE_EMOTIONS = {
-    "Calmness": 1.2,        # Mental peace = foundational to wellbeing
-    "Gratitude": 1.2,       # Core to transformation and reframing perspective
-    "Determination": 1.1,   # Action-oriented, high value
+    "Calmness": 1.0,        # Mental peace = foundational to wellbeing
+    "Gratitude": 1.0,       # Core to transformation and reframing perspective
+    "Determination": 1.0,   # Action-oriented, high value
     "Triumph": 1.0,         # Achievement state
     "Joy": 1.0,             # Pure positive emotion
-    "Enthusiasm": 0.9,      # Active engagement, slightly lower than joy
-    "Contentment": 0.9      # Passive satisfaction, still valuable
+    "Enthusiasm": 1.0,      # Active engagement, slightly lower than joy
+    "Contentment": 1.0      # Passive satisfaction, still valuable
 }
 
 # Weights for negative emotions to calculate weighted average
 NEGATIVE_EMOTIONS = {
-    "Shame": -1.3,           # Most destructive to identity
-    "Guilt": -1.2,           # Deep self-judgment, blocks growth
-    "Embarrassment": -1.1,   # Social inhibition, prevents authenticity
-    "Anxiety": -1.1,         # Chronic stress, undermines action
+    "Shame": -1.0,           # Most destructive to identity
+    "Guilt": -1.0,           # Deep self-judgment, blocks growth
+    "Embarrassment": -1.0,   # Social inhibition, prevents authenticity
+    "Anxiety": -1.0,         # Chronic stress, undermines action
     "Doubt": -1.0,           # Cognitive block, paralyzes decision-making
-    "Anger": -0.8,           # Can be motivating when channeled, less negative
-    "Sadness": -0.7          # Natural emotion, not inherently destructive
+    "Anger": -1.0,           # Can be motivating when channeled, less negative
+    "Sadness": -1.0          # Natural emotion, not inherently destructive
 }
 
 TOTAL_EMOTIONS = {**POSITIVE_EMOTIONS, **NEGATIVE_EMOTIONS}
@@ -68,6 +68,7 @@ async def analyze_emotion_with_hume(audio_bytes: bytes) -> dict:
                 for emotion in pred.get("emotions", [])
                 if emotion["name"] in TOTAL_EMOTIONS
             }
+            print(filtered_emotions)
 
             return {"emotions": filtered_emotions, "analyzed_at": datetime.utcnow().isoformat()}
     
