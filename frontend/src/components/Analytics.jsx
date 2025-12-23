@@ -49,16 +49,14 @@ function Analytics({ token }) {
     );
   }
 
-  // Pre-process emotional trends to only show date for first conversation of each day
+  // Pre-process emotional trends with index for proper positioning
   const processedTrends = (() => {
     const seenDays = new Set();
-    return (data.emotional_trends || []).map((item) => {
+    return (data.emotional_trends || []).map((item, index) => {
       const dayKey = new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-      if (seenDays.has(dayKey)) {
-        return { ...item, displayDate: '' };
-      }
-      seenDays.add(dayKey);
-      return { ...item, displayDate: dayKey };
+      const isFirstOfDay = !seenDays.has(dayKey);
+      if (isFirstOfDay) seenDays.add(dayKey);
+      return { ...item, index, displayDate: isFirstOfDay ? dayKey : '' };
     });
   })();
 
@@ -154,9 +152,10 @@ function Analytics({ token }) {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(184, 169, 212, 0.2)" />
               <XAxis 
-                dataKey="displayDate" 
+                dataKey="index" 
                 stroke="#9D8CB5"
                 interval={0}
+                tickFormatter={(_, index) => processedTrends[index]?.displayDate || ''}
               />
               <YAxis stroke="#9D8CB5" domain={[0, 100]} />
               <ReferenceLine y={50} stroke="#9D8CB5" strokeDasharray="5 5" />

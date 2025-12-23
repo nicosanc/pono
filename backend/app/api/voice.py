@@ -149,9 +149,7 @@ async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, us
                         "item": {
                             "type": "function_call_output",
                             "call_id": call_id,
-                            "output": {
-                                "output": json.dumps({"ok": True}) 
-                            }
+                            "output": json.dumps({"ok": True}) 
                         }
                     }))
 
