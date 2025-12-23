@@ -44,8 +44,6 @@ class ActionItem(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     title = Column(String)
-    conversation_id_created = Column(Integer, ForeignKey("conversations.id"))
-    conversation_id_closed = Column(Integer, ForeignKey("conversations.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     closed_at = Column(DateTime, nullable=True)
     description = Column(Text, nullable=True)

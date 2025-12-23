@@ -35,11 +35,12 @@ def get_sentiment_analytics(
         db.query(models.ActionItem)
         .filter(
             models.ActionItem.user_id == current_user.id,
-            models.ActionItem.status == "open",
+            models.ActionItem.status == "open"
         )
+        .order_by(models.ActionItem.created_at.desc())
         .all()
     )
-    action_item_list = [{"title": item.title, "status": item.status, "description": item.description} for item in action_items]
+    action_item_list = [{"title": item.title, "id": item.id, "status": item.status, "description": item.description} for item in action_items]
     total_sessions = len(conversations)
 
     # Safely compute average duration (seconds -> minutes), ignoring None durations
@@ -84,3 +85,14 @@ def dominant_emotion(emotion_data: dict) -> list[dict]:
     emotions = emotion_data.get("emotions", {}).items()
     top_3_emotions = sorted(emotions, key=lambda x: abs(x[1]), reverse=True)[:3]
     return [{"emotion": emotion, "score": score} for emotion, score in top_3_emotions]
+
+
+@router.delete("/analytics/action-items/{action_item_id}")
+def delete_action_item(action_item_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete an action item"""
+    action_item = db.query(models.ActionItem).filter(models.ActionItem.id == action_item_id, models.ActionItem.user_id == current_user.id).first()
+    if not action_item:
+        raise HTTPException(status_code=404, detail="Action item not found")
+    db.delete(action_item)
+    db.commit()
+    return {"message": "Action item deleted successfully"}

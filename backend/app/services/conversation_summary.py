@@ -28,14 +28,7 @@ def generate_conversation_summary(transcript: list[dict]) -> str:
             {
                 "role": "system",
                 "content": """You are a life coaching AI assistant. Your task is to take this conversation transcript and create a bulleted list of 10 items or 
-                less summarizing the most key insights, breakthroughs,or takeaways from the conversation. Write in chronological order of the conversation transcript. After wrapping up,
-                output agreed action items in this exact block format, at session end. If none, only say 'No actions agreed.' within the block - but still include the block format. Status is only either 'open' or 'closed'. If
-                a user explicitly says they are done with an action item and are no longer working on it, then set the status to 'closed'. 
-                ACTION_ITEMS:
-                   - <title> | <status> | <description>
-                   - <title> | <status> | <description>
-                   ...
-                END_ACTION_ITEMS
+                less summarizing the most key insights, breakthroughs,or takeaways from the conversation. Write in chronological order of the conversation transcript. 
                 """
             },
             {

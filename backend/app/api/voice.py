@@ -91,7 +91,7 @@ async def relay_client_to_openai(
             pass
 
 
-async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, user_id: int, db: Session):
+async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, user_id: int, db: Session, conversation_id: int):
     """Forward OpenAI responses to browser and capture transcript.
 
     Streams events from OpenAI Realtime API to the client browser while
@@ -115,13 +115,51 @@ async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, us
             except json.JSONDecodeError:
                 continue
 
+
             # Forward to client (ignore if disconnected)
             try:
                 await client_ws.send_text(message)
             except (WebSocketDisconnect, RuntimeError):
                 break
 
-            # Check user transcripts for policy violations
+            # Listen for tool calls and handle them
+            try:
+                if event.get("type") == "response.function_call_arguments.done":
+                    print(f"event: {json.dumps(event, indent=4)}")
+                    call_id = event.get("call_id")
+                    raw_args = event.get("arguments")
+                    args = json.loads(raw_args)
+                    item_title = args.get('title')
+                    item_description = args.get('description')
+                    item_status = args.get('status')
+                    item = models.ActionItem(
+                        user_id=user_id,
+                        title=item_title,
+                        description=item_description,
+                        status=item_status,
+                        created_at=datetime.now(),
+                    )
+                    print(f"Creating action item: {item_title} {item_description} {item_status}")
+                    db.add(item)
+                    db.commit()
+                    db.refresh(item)
+        
+                    await openai_ws.send(json.dumps({
+                        "type": "conversation.item.create",
+                        "item": {
+                            "type": "function_call_output",
+                            "call_id": call_id,
+                            "output": {
+                                "ok": True
+                            }
+                        }
+                    }))
+
+            except Exception as e:
+                print(f"Error in tool call: {e}")
+                traceback.print_exc()
+            
+            # Check user transcripts for policy violations and append to transcript if not flagged
             if event.get("type") == "conversation.item.input_audio_transcription.completed":
                 user_transcript = event.get("transcript", "")
                 if not user_transcript:
@@ -147,14 +185,16 @@ async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, us
                     return
                 
                 user_message_buffer.append(user_transcript)
-
+            
+            
             # Save transcript when assistant completes response
             if event.get("type") == "response.output_audio_transcript.done":
                 if user_message_buffer:
                     transcript.append({"role": "user", "content": " ".join(user_message_buffer)})
                     user_message_buffer.clear()
-                
                 transcript.append({"role": "assistant", "content": event.get("transcript", "")})
+                
+
 
     except websockets.exceptions.ConnectionClosed:
         pass
@@ -298,6 +338,35 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
                         },
                         "output": {"voice": "cedar"},
                     },
+                    "tools": [
+                        {
+                            "type": "function",
+                            "name": "create_action_item",
+                            "description": "Create a new action item to be saved to the action_items table in the database.",
+                            "parameters": {
+                                "type": "object",
+                                "additionalProperties": False,
+                                "properties":{
+                                    "title": {
+                                        "type": "string",
+                                        "description": "The title of the action item to be created."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "description": "A concise description of the action item to be created."
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "description": "The status of the action item to be created.",
+                                        "enum": ["open", "closed"],
+                                        "default": "open"
+                                    },
+                                },
+                                "required": ["title", "description", "status"]
+                            }
+                        }
+                    ],
+                    "tool_choice": "auto",
                 },
             }
 
@@ -306,7 +375,7 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
             # Start a bidirectional relay
             await asyncio.gather(
                 relay_client_to_openai(websocket, openai_ws, audio_chunks),
-                relay_openai_to_client(openai_ws, websocket, transcript, user_id, db),
+                relay_openai_to_client(openai_ws, websocket, transcript, user_id, db, conversation.id),
             )
 
     except WebSocketDisconnect:
@@ -341,17 +410,6 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
                 # Generate embedding and summary
                 conversation.embedding = generate_conversation_embedding(transcript)
                 conversation.summary = generate_conversation_summary(transcript)
-                action_items = generate_action_items(conversation.summary)
-                for item in action_items:
-                    action_item = models.ActionItem(
-                        user_id=conversation.user_id,
-                        title=item['title'],
-                        status=item['status'],
-                        description=item['description'],
-                        conversation_id_created=conversation.id,
-                        created_at=datetime.now()
-                    )
-                    db.add(action_item)
                 db.commit()
             except Exception as e:
                 print(f"Failed to save conversation: {e}")
