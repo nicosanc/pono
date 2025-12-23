@@ -150,9 +150,13 @@ async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, us
                             "type": "function_call_output",
                             "call_id": call_id,
                             "output": {
-                                "ok": True
+                                "output": json.dumps({"ok": True}) 
                             }
                         }
+                    }))
+
+                    await openai_ws.send(json.dumps({
+                        "type": "response.create"
                     }))
 
             except Exception as e:
