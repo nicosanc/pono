@@ -1,32 +1,33 @@
 # Pono - Voice AI Life Coach
 
-Real-time voice coaching platform with full conversation history awareness, voice biometric analysis, and BS-proof progress tracking.
+Real-time voice coaching platform with emotion analysis, action tracking, and 90-day context awareness.
 
 ## Features
 
-- **Real-time Voice Chat**: Sub-100ms latency streaming via OpenAI Realtime API with WebSocket proxying
-- **Full Context Awareness**: Injects complete 90-day conversation history into every session for continuous progress tracking
-- **Privacy-First**: End-to-end message encryption (AES-256) with data redaction mode enabled for OpenAI
-- **Semantic Search**: pgvector embeddings for exploring past breakthroughs and insights
-- **Personalized Onboarding**: Structured consultation generates user profile summaries for contextual coaching
-- **Automated Summaries**: GPT-4 distills sessions into concise bullet points for efficient context injection
-- **Action Item Tracking**: Monitors commitment follow-through as core metric for identity score (planned)
-- **Voice Biometrics**: Sentiment analysis via Hume AI to detect confidence/anxiety patterns (planned)
+- **Real-time Voice Chat**: Low-latency streaming via OpenAI Realtime API with WebSocket relay
+- **Emotion Analysis**: Hume AI prosody detection tracks confidence, anxiety, and emotional patterns across sessions
+- **Action Item Tracking**: LLM tool calling creates and persists action items mid-conversation
+- **Full Context Awareness**: Injects 90-day conversation history + open action items into every session
+- **Privacy-First**: AES-256 message encryption with OpenAI data redaction
+- **Analytics Dashboard**: Emotion trends, dominant emotions, action items, and session history
+- **Personalized Onboarding**: Structured consultation generates user profile for contextual coaching
+- **Content Moderation**: Real-time OpenAI Moderation API gating on voice transcripts
 
 ## Tech Stack
 
 **Backend:**
-- FastAPI (WebSocket handling, JWT auth)
-- PostgreSQL + pgvector (vector similarity search)
+- FastAPI (WebSocket relay, JWT auth)
+- PostgreSQL + pgvector
 - SQLAlchemy ORM
-- OpenAI Realtime API (voice), GPT-4o-mini (summaries), text-embedding-3-small (vectors)
-- Cryptography (Fernet AES encryption)
+- OpenAI Realtime API (voice), GPT-4o-mini (summaries, moderation), text-embedding-3-small
+- Hume AI (emotion analysis)
+- Cryptography (Fernet AES-256)
 
 **Frontend:**
 - React + Vite
-- React Query (TanStack Query for state management)
-- Web Audio API (AudioWorklet for PCM16 processing)
-- Canvas API (real-time waveform visualization)
+- React Query (TanStack Query)
+- Web Audio API (AudioWorklet for PCM16)
+- Recharts (analytics visualization)
 
 ## Setup
 
@@ -35,6 +36,7 @@ Real-time voice coaching platform with full conversation history awareness, voic
 - PostgreSQL 14+ with pgvector extension
 - Node.js 18+
 - OpenAI API key
+- Hume AI API key
 
 ### Backend
 
@@ -47,14 +49,15 @@ pip install -r requirements.txt
 # Create .env file
 echo "DATABASE_URL=postgresql://user:password@localhost/pono" > .env
 echo "OPENAI_API_KEY=your_key_here" >> .env
+echo "HUME_API_KEY=your_key_here" >> .env
 echo "SECRET_KEY=your_jwt_secret" >> .env
 echo "ENCRYPTION_KEY=$(python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())')" >> .env
 
-# Run migrations (or manually create tables from models.py)
-python -m app.database  # Creates tables
+# Create tables
+python -m app.database
 
 # Start server
-make dev
+uvicorn app.main:app --reload
 ```
 
 ### Frontend
@@ -69,18 +72,11 @@ Navigate to `http://localhost:5173`
 
 ## Architecture Highlights
 
-- **Audio Pipeline**: Browser microphone → AudioWorklet (Float32→PCM16) → WebSocket → FastAPI → OpenAI Realtime API → Browser speakers
-- **Context Injection**: User profile summary + chronological 90-day conversation summaries injected into system prompt
-- **Privacy Layer**: Messages encrypted at application level before DB storage; decrypted only on authorized retrieval
-- **Vector Search**: Conversation embeddings enable semantic exploration independent of chronological context retrieval
-
-## Roadmap
-
-- [ ] Identity Score algorithm (voice biometrics + commitment tracking + progress depth)
-- [ ] Gamification (streaks, decay, variable rewards, badges)
-- [ ] Analytics dashboard (pattern detection, stuck loops, regression alerts)
-- [ ] Social features (anonymous leaderboard, peer accountability)
-- [ ] Personalized transformation programs (adaptive 30/60/90-day plans)
+- **Audio Pipeline**: Browser mic → AudioWorklet (PCM16) → WebSocket → FastAPI relay → OpenAI Realtime → speakers
+- **Context Injection**: User profile + 90-day conversation history + open action items loaded into every session
+- **Tool Calling**: Mid-conversation function calls create action items in real-time without breaking the session
+- **Emotion Analysis**: Post-session Hume AI analysis generates emotion trends for analytics dashboard
+- **Content Safety**: OpenAI Moderation API gates user transcripts in real-time
 
 ## License
 

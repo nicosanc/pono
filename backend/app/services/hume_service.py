@@ -59,6 +59,8 @@ async def analyze_emotion_with_hume(audio_bytes: bytes) -> dict:
             
             # Extract predictions
             full_result = result.model_dump()
+            print(f"Hume full_result keys: {full_result.keys() if full_result else 'None'}")
+            print(f"Hume prosody: {full_result.get('prosody')}")
             predictions = full_result.get("prosody", {}).get("predictions", [])
 
             # Filter to tracked emotions only

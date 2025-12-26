@@ -47,7 +47,8 @@ function VoiceChat({ token, userId }) {
       setIsConnected(false);
     };
 
-    wsRef.current.onclose = () => {
+    wsRef.current.onclose = (event) => {
+      console.log(`WebSocket closed: code=${event.code}, reason=${event.reason}`);
       setIsConnected(false);
       // Clean up audio stream if WebSocket closes unexpectedly
       if (streamRef.current) {

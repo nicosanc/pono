@@ -80,8 +80,8 @@ async def relay_client_to_openai(
 
     except WebSocketDisconnect:
         await openai_ws.close()
-    except websockets.exceptions.ConnectionClosed:
-        pass
+    except websockets.exceptions.ConnectionClosed as e:
+        print(f"Client relay - OpenAI WS closed: code={e.code}, reason={e.reason}")
     except Exception as e:
         print(f"Error in client relay: {e}")
         traceback.print_exc()
@@ -198,8 +198,8 @@ async def relay_openai_to_client(openai_ws, client_ws: WebSocket, transcript, us
                 
 
 
-    except websockets.exceptions.ConnectionClosed:
-        pass
+    except websockets.exceptions.ConnectionClosed as e:
+        print(f"OpenAI relay - WS closed: code={e.code}, reason={e.reason}")
     except Exception as e:
         print(f"Error in OpenAI relay: {e}")
         traceback.print_exc()
@@ -422,7 +422,10 @@ async def voice_endpoint(websocket: WebSocket, token: str, onboarding: bool = Fa
         if audio_chunks and conversation:
             temp_path = None
             try:
+                print(f"Audio chunks count: {len(audio_chunks)}")
+                print(f"First chunk length: {len(audio_chunks[0]) if audio_chunks else 'N/A'}")
                 wav_bytes = combine_and_convert_audio(audio_chunks)
+                print(f"WAV bytes length: {len(wav_bytes) if wav_bytes else 'None'}")
                 with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
                     temp_file.write(wav_bytes)
                     temp_path = temp_file.name
